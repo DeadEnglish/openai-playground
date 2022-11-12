@@ -23,7 +23,7 @@ const QuestionPage: FunctionComponent = () => {
 		try {
 			const proposal = await openAi.createCompletion({
 				model: "text-davinci-002",
-				prompt: `created a detailed explanation about ${topic} targeted to a university level education.`,
+				prompt: `created a detailed explanation targeted towards a child around the age of 5 about the following topic: ${topic}.`,
 				max_tokens: 1500,
 			});
 

@@ -8,10 +8,9 @@ export const theme = {
 		fail: "#e4251b",
 		borders: "#b7b7b7",
 		text: "#e3e3e3",
-		primary: "#116DFF",
-		secondary: "#5AF091",
-		tertiary: "#5E6A8A",
 		background: "#242424",
+		link: "#4a4a4a",
+		linkHover: "#707070",
 	},
 	fonts: {
 		family: '"Work Sans",sans-serif, arial, helvetica',

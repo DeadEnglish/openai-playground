@@ -2,13 +2,23 @@ import { Field, Formik } from "Formik";
 import { Configuration, OpenAIApi } from "openai";
 import { FunctionComponent, useState } from "react";
 import Container from "../../components/container/container.component";
+import Footer from "../../components/footer/footer.component";
 import { createPrompt } from "./helpers/create-prompt.helper";
+import { targetAudience } from "./helpers/target-audience.helper";
 import {
 	EAnswerStyle,
-	ETargetAudience,
+	EFormState,
 	IQuestionFormValues,
 } from "./question.types";
-import { FieldContainer, FormikForm } from "./questions.styles";
+import {
+	Actions,
+	Button,
+	Explanation,
+	FieldContainer,
+	FormikForm,
+	FormSubmitted,
+	Header,
+} from "./questions.styles";
 
 const QuestionPage: FunctionComponent = () => {
 	const openAiConfiguration = new Configuration({
@@ -19,18 +29,17 @@ const QuestionPage: FunctionComponent = () => {
 
 	const [explanation, setExplanation] = useState<string>();
 	const [formState, setFormState] = useState<EFormState>(0);
-
-	const [isLoading, setIsLoading] = useState<boolean>();
+	const [isLoading, setIsLoading] = useState<boolean>(false);
+	const [showForm, setShowForm] = useState<boolean>(false);
+	const [hasSubmitted, setHasSubmitted] = useState<boolean>(false);
 
 	const handleSubmit = async (values: IQuestionFormValues) => {
 		if (!openAi) {
 			throw new Error("OpenAi isn't available at this time :(");
 		}
 
-		let calculation = (1500 / 100) * values.maxLength;
-		if (calculation < 256) calculation = 256;
-
 		setIsLoading(true);
+		setHasSubmitted(true);
 
 		try {
 			const proposal = await openAi.createCompletion({
@@ -40,7 +49,7 @@ const QuestionPage: FunctionComponent = () => {
 					values.style,
 					values.targetAudience
 				),
-				max_tokens: values.maxLength,
+				max_tokens: 1500,
 			});
 
 			setExplanation(proposal.data.choices[0].text);
@@ -56,145 +65,180 @@ const QuestionPage: FunctionComponent = () => {
 		}
 	};
 
+	const handleReset = (resetForm: () => void) => {
+		resetForm();
+		setIsLoading(false);
+		setHasSubmitted(false);
+		setFormState(0);
+	};
+
 	const initialValues: IQuestionFormValues = {
 		topic: "",
 		style: EAnswerStyle.friendly,
-		targetAudience: ETargetAudience.fiveYearOld,
+		targetAudience: targetAudience.fiveYearOld,
 		maxLength: 0,
 	};
 
 	return (
 		<Container>
-			<header>
-				<h1>ELI5</h1>
-				<p>
-					Ever felt dumb? throw me a topic and I'll Explain it like a
-					toddler!
-				</p>
-			</header>
+			<Header>
+				<h1>Explainanator</h1>
+				{!showForm && (
+					<>
+						<p>
+							Want to explain something but cba to do it? try
+							this!
+						</p>
 
-			<section>
+						<Button
+							onClick={() => {
+								setShowForm(true);
+							}}
+						>
+							Lets get started
+						</Button>
+					</>
+				)}
+			</Header>
+			{showForm && (
 				<Formik initialValues={initialValues} onSubmit={handleSubmit}>
-					{() => (
+					{({ resetForm, values }) => (
 						<FormikForm>
-							<FieldContainer>
-								{formState === EFormState.topic && (
-									<>
-										<label htmlFor="topic">
-											what's your topic?
-										</label>
-										<Field
-											name="topic"
-											id="topic"
-											type="input"
-										/>
-									</>
-								)}
-								{formState === EFormState.audience && (
-									<>
-										<label htmlFor="targetAudience">
-											Who are you explaining it to?
-										</label>
-										<Field
-											name="targetAudience"
-											id="targetAudience"
-											as="select"
-										>
-											<option value="">
-												Please select
-											</option>
-											{(
-												Object.keys(
-													ETargetAudience
-												) as Array<
-													keyof typeof ETargetAudience
-												>
-											).map((key) => (
-												<option key={key} value={key}>
-													{key
-														.split(/(?=[A-Z])/)
-														.join(" ")}
+							{!hasSubmitted && (
+								<FieldContainer>
+									{formState === EFormState.topic && (
+										<>
+											<label htmlFor="topic">
+												what's your topic?
+											</label>
+											<Field
+												name="topic"
+												id="topic"
+												type="input"
+											/>
+										</>
+									)}
+									{formState === EFormState.audience && (
+										<>
+											<label htmlFor="targetAudience">
+												Who are you explaining it to?
+											</label>
+											<Field
+												name="targetAudience"
+												id="targetAudience"
+												as="select"
+											>
+												<option value="">
+													Please select
 												</option>
-											))}
-										</Field>
-									</>
-								)}
-								{formState === EFormState.style && (
-									<>
-										<label htmlFor="style">
-											Choose a style for your response
-										</label>
-										<Field
-											name="style"
-											id="style"
-											as="select"
-										>
-											<option value="">
-												Please select
-											</option>
-											{(
-												Object.keys(
-													EAnswerStyle
-												) as Array<
-													keyof typeof EAnswerStyle
-												>
-											).map((key) => (
-												<option key={key} value={key}>
-													{key
-														.split(/(?=[A-Z])/)
-														.join(" ")}
+												{Object.entries(
+													targetAudience
+												).map(([key, value]) => (
+													<option
+														key={key}
+														value={value}
+													>
+														{key
+															.split(/(?=[A-Z])/)
+															.join(" ")}
+													</option>
+												))}
+											</Field>
+										</>
+									)}
+									{formState === EFormState.style && (
+										<>
+											<label htmlFor="style">
+												Choose a style for your response
+											</label>
+											<Field
+												name="style"
+												id="style"
+												as="select"
+											>
+												<option value="">
+													Please select
 												</option>
-											))}
-										</Field>
-									</>
-								)}
-								{formState === EFormState.length && (
-									<>
-										<label htmlFor="maxLength">
-											Set the length of response
-										</label>
-										<Field
-											name="maxLength"
-											id="maxLength"
-											type="range"
-											min="0"
-											max="100"
-											step="5"
-										/>
-									</>
-								)}
-
-								{formState !== EFormState.topic && (
-									<button
-										type="button"
-										onClick={() =>
-											setFormState(formState - 1)
-										}
-									>
-										back a step
-									</button>
-								)}
-								{formState < EFormState.length && (
-									<button
-										type="button"
-										onClick={() =>
-											setFormState(formState + 1)
-										}
-									>
-										Continue
-									</button>
-								)}
-								{formState === EFormState.length && (
-									<button type="submit">
-										Get explanation!
-									</button>
-								)}
-							</FieldContainer>
+												{(
+													Object.keys(
+														EAnswerStyle
+													) as Array<
+														keyof typeof EAnswerStyle
+													>
+												).map((key) => (
+													<option
+														key={key}
+														value={key}
+													>
+														{key
+															.split(/(?=[A-Z])/)
+															.join(" ")}
+													</option>
+												))}
+											</Field>
+										</>
+									)}
+									<Actions>
+										{formState !== EFormState.topic && (
+											<Button
+												type="button"
+												onClick={() =>
+													setFormState(formState - 1)
+												}
+											>
+												back a step
+											</Button>
+										)}
+										{formState < EFormState.style && (
+											<Button
+												type="button"
+												onClick={() =>
+													setFormState(formState + 1)
+												}
+											>
+												Continue
+											</Button>
+										)}
+										{formState === EFormState.style && (
+											<Button type="submit">
+												Get explanation!
+											</Button>
+										)}
+									</Actions>
+								</FieldContainer>
+							)}
+							{hasSubmitted && (
+								<>
+									<FormSubmitted>
+										<h2>
+											Looks like you want me to explain{" "}
+											{values.topic}, here it goes...
+										</h2>
+									</FormSubmitted>
+									<Explanation>
+										{isLoading ? (
+											"loading..."
+										) : (
+											<p>{explanation}</p>
+										)}
+										{!isLoading && (
+											<Button
+												type="button"
+												onClick={() =>
+													handleReset(resetForm)
+												}
+											>
+												Want another explanation?
+											</Button>
+										)}
+									</Explanation>
+								</>
+							)}
 						</FormikForm>
 					)}
 				</Formik>
-				<div>{isLoading ? "loading..." : explanation}</div>
-			</section>
+			)}
+			<Footer />
 		</Container>
 	);
 };

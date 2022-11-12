@@ -16,11 +16,23 @@ const globalStructure = css`
 		color: ${({ theme }) => theme.brand.text};
 		-webkit-font-smoothing: antialiased;
 		-moz-osx-font-smoothing: grayscale;
+
 		input,
 		select,
 		textarea,
 		button {
 			font-family: ${({ theme }) => theme.fonts.family};
+			color: ${({ theme }) => theme.brand.text};
+			background: none;
+			color: inherit;
+			border: none;
+			padding: 0;
+			font: inherit;
+			outline: inherit;
+		}
+
+		button {
+			cursor: pointer;
 		}
 	}
 

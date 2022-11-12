@@ -1,4 +1,4 @@
-import { Field, Formik } from "Formik";
+import { Field, Formik } from "formik";
 import { Configuration, OpenAIApi } from "openai";
 import { FunctionComponent, useState } from "react";
 import Container from "../../components/container/container.component";
